@@ -1,0 +1,15 @@
+{
+  "name": "my-smart-library-server",
+  "version": "1.0.0",
+  "description": "My Smart Library Server",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
