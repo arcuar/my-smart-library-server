@@ -1,0 +1,8 @@
+name: "🎸 기타"
+description: "기타 이슈 템플릿입니다."
+title: "제목을 입력해주세요."
+body:
+  - type: textarea
+    attributes:
+      label: "이슈 내용"
+      description: "이슈에 대한 내용을 작성해주세요."

@@ -21,7 +21,7 @@ async function fetchBooks(searchWord) {
       }
     });
 
-    // 검색 성공! 받아온 데이터 중 실제 책 데이터만 추출
+    // 받아온 데이터 중 실제 책 데이터만 추출
     const books = response.data.documents;
     
     // 결과 출력
@@ -35,7 +35,7 @@ async function fetchBooks(searchWord) {
 
   } catch (error) {
     // 에러 발생 시 원인
-    console.error("API 호출 실패!");
+    console.error("API 호출 실패");
     console.error(error.response ? error.response.data : error.message);
   }
 }
