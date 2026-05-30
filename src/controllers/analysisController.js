@@ -4,8 +4,23 @@
 //도서 목록 으로 분석
 function analyzeLibrary(req, res) {
   const { books } = req.body;
-  if (!books || !Array.isArray(books) || books.length === 0)
-    return res.status(400).json({ message: '분석할 도서 목록을 전달해주세요.' });
+  if (!Array.isArray(books)) {
+    return res.status(400).json({ message: 'books는 배열이어야 합니다.' });
+  }
+
+  if (books.length === 0) {
+    return res.status(200).json({
+      status: 200,
+      message: '독서 성향 분석 완료',
+      data: {
+        tendencyTitle: '📚 이제 막 시작하는 독서가',
+        summaryMessage: '아직 분석할 책이 없어요. 먼저 서재에 책을 담아보세요!',
+        topAuthor: null,
+        topPublisher: null,
+        oldestBookYear: null,
+      },
+    });
+  }
 
   //초기화
   const authorCount = {};
@@ -42,17 +57,34 @@ function analyzeLibrary(req, res) {
     .slice(0, 10)
     .map(([word]) => word);
 
-  const readCount = books.filter((b) => b.status === 'read').length;
-  const toReadCount = books.filter((b) => b.status === 'to-read').length;
+  const years = books
+    .map((b) => (typeof b.datetime === 'string' ? new Date(b.datetime).getFullYear() : NaN))
+    .filter((y) => Number.isFinite(y));
+  const oldestBookYear = years.length > 0 ? Math.min(...years) : null;
+
+  const topAuthor = topAuthors[0]?.name ?? null;
+  const topPublisher = topPublishers[0]?.name ?? null;
+  const publisherTopCount = topPublishers[0]?.count ?? 0;
+  const ratio = publisherTopCount / books.length;
+  const tendencyTitle =
+    ratio >= 0.6
+      ? '🧐 한 우물만 파는 심도 깊은 독서가'
+      : '🌈 이것저것 골고루 읽는 잡식 독서가';
 
   res.json({
-    totalBooks: books.length,
-    readCount,
-    toReadCount,
-    topAuthors,
-    topPublishers,
-    topKeywords,
-    summary: `총 ${books.length}권 중 ${readCount}권을 읽었어요. 자주 읽는 작가는 ${topAuthors[0]?.name ?? '없음'}이에요.`,
+    status: 200,
+    message: '독서 성향 분석 완료',
+    data: {
+      tendencyTitle,
+      summaryMessage: `총 ${books.length}권의 책 중 ${
+        topPublisher ? `'${topPublisher}' 출판사의 책을 가장 많이 담으셨네요!` : '출판사 정보가 부족해요.'
+      } ${topAuthor ? `특히 '${topAuthor}' 작가의 책이 가장 많습니다.` : '작가 정보가 부족해요.'}`,
+      topAuthor,
+      topPublisher,
+      oldestBookYear,
+      // 기존 화면에서 쓰고 있다면 호환 위해 함께 제공
+      topKeywords,
+    },
   });
 }
 

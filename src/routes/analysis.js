@@ -8,8 +8,8 @@ const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 
 
-//get 안되서 post로 바꿈
 router.post('/', authMiddleware, analyzeLibrary);
+router.post('/reading-type', authMiddleware, analyzeLibrary);
 
 module.exports = router;
 //내보냄

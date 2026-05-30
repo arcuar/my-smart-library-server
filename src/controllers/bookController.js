@@ -9,6 +9,70 @@ function kakaoHeaders() {
   return { Authorization: `KakaoAK ${process.env.KAKAO_API_KEY}` };
 }
 
+function extractPrimaryIsbn(rawIsbn) {
+  if (!rawIsbn || typeof rawIsbn !== 'string') return null;
+  const candidates = rawIsbn
+    .split(/\s+/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const isbn13 = candidates.find((v) => /^\d{13}$/.test(v));
+  if (isbn13) return isbn13;
+  const isbn10 = candidates.find((v) => /^\d{10}$/.test(v));
+  return isbn10 ?? null;
+}
+
+function cleanText(value) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+async function fetchOpenLibraryExtra(isbn) {
+  try {
+    const editionRes = await axios.get(`https://openlibrary.org/isbn/${isbn}.json`, {
+      timeout: 5000,
+    });
+    const edition = editionRes.data ?? {};
+
+    const tableOfContentsArray = Array.isArray(edition.table_of_contents)
+      ? edition.table_of_contents
+      : [];
+    const tableOfContents = tableOfContentsArray
+      .map((item) => cleanText(item?.title || item?.label || item?.chapter || ''))
+      .filter(Boolean)
+      .join('\n');
+
+    const editorialReviews = [];
+    const excerptArray = Array.isArray(edition.excerpts) ? edition.excerpts : [];
+    excerptArray.forEach((excerpt) => {
+      const raw =
+        typeof excerpt === 'string' ? excerpt : excerpt?.comment || excerpt?.excerpt || excerpt?.value || '';
+      const text = cleanText(raw);
+      if (text) editorialReviews.push(text);
+    });
+
+    const workKey = Array.isArray(edition.works) ? edition.works[0]?.key : null;
+    if (workKey) {
+      const workRes = await axios.get(`https://openlibrary.org${workKey}.json`, { timeout: 5000 });
+      const work = workRes.data ?? {};
+      const description =
+        typeof work.description === 'string' ? work.description : cleanText(work.description?.value ?? '');
+      if (description) editorialReviews.push(cleanText(description));
+    }
+
+    return {
+      tableOfContents: tableOfContents || null,
+      editorialReviews: [...new Set(editorialReviews)].slice(0, 5),
+      pageCount: Number.isFinite(edition.number_of_pages) ? edition.number_of_pages : null,
+    };
+  } catch {
+    return {
+      tableOfContents: null,
+      editorialReviews: [],
+      pageCount: null,
+    };
+  }
+}
+
 //도서검색
 
 async function searchBooks(req, res) {
@@ -59,6 +123,9 @@ async function getBookDetail(req, res) {
     const doc = response.data.documents[0];
     if (!doc) return res.status(404).json({ message: '해당 도서를 찾을 수 없습니다.' });
 
+    const primaryIsbn = extractPrimaryIsbn(doc.isbn) ?? isbn;
+    const extra = await fetchOpenLibraryExtra(primaryIsbn);
+
     res.json({
       isbn: doc.isbn,
       title: doc.title,
@@ -72,6 +139,9 @@ async function getBookDetail(req, res) {
       price: doc.price,
       salePrice: doc.sale_price,
       status: doc.status,
+      tableOfContents: extra.tableOfContents,
+      editorialReviews: extra.editorialReviews,
+      pageCount: extra.pageCount,
     });
   } catch (err) {
     res.status(500).json({ message: '도서 상세 조회 중 오류가 발생했습니다.', error: err.message });

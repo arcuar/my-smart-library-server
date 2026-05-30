@@ -10,6 +10,7 @@ const router = express.Router();
 //get 요청으로 가져옴
 router.get('/search', authMiddleware, searchBooks);
 router.get('/:isbn/detail', authMiddleware, getBookDetail);
+router.get('/details/:isbn', authMiddleware, getBookDetail);
 //api 주소 확인필요
 
 module.exports = router;

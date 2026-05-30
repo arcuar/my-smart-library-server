@@ -14,6 +14,21 @@ db.exec(`
   ) 
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS library_books (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    isbn TEXT NOT NULL,
+    title TEXT NOT NULL,
+    authors TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'WISH',
+    review TEXT NOT NULL DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, isbn),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
+
 // users 테이블이 존재하지 않으면 생성
 // id: 고유 식별자, 자동 증가
 // username: 사용자 이름, 고유
