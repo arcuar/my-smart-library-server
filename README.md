@@ -1,4 +1,4 @@
-# my-smart-library-server
+# my-smart-library-server (GETIT 9th)
 
 나의 스마트 서재 백엔드 작업 공간입니다!
 
